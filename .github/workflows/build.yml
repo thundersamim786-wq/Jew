@@ -5,10 +5,6 @@ on:
     branches:
       - main
       - master
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_dispatch:
 
 jobs:
@@ -19,18 +15,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Locate Project Root
-        id: locate
-        run: |
-          PUBSPEC_PATH=$(find . -name "pubspec.yaml" -not -path "*/.*" | head -n 1)
-          if [ -z "$PUBSPEC_PATH" ]; then
-            echo "ERROR: pubspec.yaml not found anywhere in repo!"
-            exit 1
-          fi
-          PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
-          echo "Found project at: $PROJECT_DIR"
-          echo "project_dir=$PROJECT_DIR" >> $GITHUB_OUTPUT
 
       - name: Setup Java Development Kit (JDK 17)
         uses: actions/setup-java@v4
@@ -44,20 +28,26 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate and Configure Native Android Files
-        working-directory: ${{ steps.locate.outputs.project_dir }}
+      - name: Generate Android Scaffolding Safely
         run: |
+          # Only generate if android directory is completely missing
           if [ ! -d "android" ]; then
-            echo "Generating android directory..."
-            flutter create . --platforms=android --org com.example
+            echo "Generating android files safely..."
+            mkdir -p /tmp/flutter_temp
+            cd /tmp/flutter_temp
+            flutter create temp_app --platforms=android --org com.example
+            cd -
+            cp -r /tmp/flutter_temp/temp_app/android ./
           fi
 
+          # Add network permissions
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
+          # Set minSdkVersion to 21
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
@@ -65,29 +55,20 @@ jobs:
           fi
 
       - name: Install Dependencies
-        working-directory: ${{ steps.locate.outputs.project_dir }}
         run: flutter pub get
 
-      - name: Patch ProGuard and Auto-Fix Dart Shorthands
+      - name: Patch ProGuard
         run: |
-          # 1. Fix ProGuard in pub cache
           find /home/runner/.pub-cache -name "build.gradle" -exec sed -i "s/proguard-android.txt/proguard-android-optimize.txt/g" {} +
 
-          # 2. Automatically fix the dot-shorthands across all .dart files
-          echo "Auto-fixing dot-shorthands in Dart source files..."
-          find . -name "*.dart" -exec sed -i 's/colorScheme: \.fromSeed/colorScheme: ColorScheme.fromSeed/g' {} +
-          find . -name "*.dart" -exec sed -i 's/mainAxisAlignment: \.center/mainAxisAlignment: MainAxisAlignment.center/g' {} +
-          find . -name "*.dart" -exec sed -i 's/crossAxisAlignment: \.center/crossAxisAlignment: CrossAxisAlignment.center/g' {} +
-
       - name: Build Android Release APK
-        working-directory: ${{ steps.locate.outputs.project_dir }}
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: ${{ steps.locate.outputs.project_dir }}/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 7
           
