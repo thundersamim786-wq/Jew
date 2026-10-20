@@ -1,56 +1,49 @@
-name: Build Android APK
+name: cinematic_vod
+description: "A streaming and media playback mobile application built with Flutter."
+publish_to: "none"
 
-on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:
+version: 1.0.0+1
 
-jobs:
-  build:
-    name: Compile Release APK
-    runs-on: ubuntu-latest
+environment:
+  sdk: ">=3.0.0 <4.0.0"
 
-    # REPLACE 'YOUR_SUBFOLDER_NAME' with the actual folder name holding pubspec.yaml
-    defaults:
-      run:
-        working-directory: YOUR_SUBFOLDER_NAME
+dependencies:
+  flutter:
+    sdk: flutter
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  # Networking & live TMDb API calls
+  http: ^1.2.0
 
-      - name: Setup Java Development Kit (JDK 17)
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+  # Native video playback engine
+  video_player: ^2.8.2
 
-      - name: Setup Flutter SDK
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
+  # In-app scraping & stream extraction engine
+  flutter_inappwebview: ^6.0.0
 
-      - name: Verify Flutter Installation
-        run: flutter doctor -v
+  # Standard UI icons
+  cupertino_icons: ^1.0.6
 
-      - name: Install Project Dependencies
-        run: flutter pub get
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
 
-      - name: Build Android Release APK
-        run: flutter build apk --release
+  flutter_lints: ^3.0.0
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cinematic-app-release
-          path: YOUR_SUBFOLDER_NAME/build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 7
-          
+  # App icon generator
+  flutter_launcher_icons: ^0.13.1
+
+# Launcher Icon Configuration
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#0D0E12"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  # Ensure icon asset directory is bundled
+  assets:
+    - assets/icon/
+    
