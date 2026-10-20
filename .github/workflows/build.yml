@@ -24,7 +24,12 @@ jobs:
 
       - name: Generate Missing Folders
         run: |
-          flutter create . --platforms=android --name=ultimate_vod
+          # Generate android platform targeting cleanly using a sub-directory structure
+          flutter create tmp_project --platforms=android --project-name=ultimate_vod
+          mv tmp_project/android ./
+          rm -rf tmp_project
+          
+          # Inject low-end hardware performance tags into the generated manifest layer
           sed -i '/<application/a \        android:hardwareAccelerated="true"\n        android:largeHeap="true"' android/app/src/main/AndroidManifest.xml
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" \/>' android/app/src/main/AndroidManifest.xml
 
