@@ -1,67 +1,52 @@
-name: Flutter Cloud Compiler
+name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows you to manually trigger builds from GitHub's Actions tab
 
 jobs:
   build:
+    name: Compile Release APK
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Java
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java Development Kit (JDK 17)
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
-      - name: Set up Flutter
+      - name: Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      - name: Restructure Project and Compile
-        run: |
-          # 1. Back up all your source files to a safe temporary folder
-          mkdir backup_lib
-          cp lib/*.dart backup_lib/
+      - name: Verify Flutter Installation
+        run: flutter doctor -v
 
-          # 2. Re-initialize a perfectly clean Flutter app structure
-          rm -rf lib
-          flutter create . --project-name=ultimate_vod --overwrite
-
-          # 3. Clear template defaults and restore your code files
-          rm -f lib/*.dart
-          cp backup_lib/*.dart lib/
-
-          # 4. Check if main.dart exists. If not, find the primary file and fix its name
-          if [ ! -f lib/main.dart ]; then
-            PRIMARY_FILE=$(grep -l "void main()" lib/*.dart | head -n 1)
-            if [ -n "$PRIMARY_FILE" ]; then
-              mv "$PRIMARY_FILE" lib/main.dart
-            fi
-          fi
-
-          # 5. Inject required streaming packages directly into the config file
-          flutter pub add flutter_inappwebview
-          flutter pub add http
-          flutter pub add video_player
-
-          # 6. Inject low-end hardware performance tags into the application manifest
-          sed -i '/<application/a \        android:hardwareAccelerated="true"\n        android:largeHeap="true"' android/app/src/main/AndroidManifest.xml
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" \/>' android/app/src/main/AndroidManifest.xml
-
-      - name: Install Packages
+      - name: Install Project Dependencies
         run: flutter pub get
 
-      - name: Compile App APK
-        run: flutter build apk --debug
+      - name: Build Android Release APK
+        run: flutter build apk --release
 
-      - name: Upload Finished App Installer
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mobile-App-Installer
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: cinematic-app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
           
