@@ -1,0 +1,20 @@
+name: ultimate_vod
+description: Ultimate VOD Streaming App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  video_player: ^2.8.2
+  flutter_inappwebview: ^6.1.5
+  
+
+flutter:
+  uses-material-design: true
+  
