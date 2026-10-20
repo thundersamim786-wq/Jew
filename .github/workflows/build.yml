@@ -22,14 +22,26 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Generate Missing Folders
+      - name: Restructure Project and Compile
         run: |
-          # Generate android platform targeting cleanly using a sub-directory structure
-          flutter create tmp_project --platforms=android --project-name=ultimate_vod
-          mv tmp_project/android ./
-          rm -rf tmp_project
-          
-          # Inject low-end hardware performance tags into the generated manifest layer
+          # 1. Back up your existing Dart source files to a temporary folder
+          mkdir backup_lib
+          cp lib/*.dart backup_lib/
+
+          # 2. Re-initialize a perfect, fully valid Flutter template structure
+          rm -rf lib
+          flutter create . --project-name=ultimate_vod --overwrite
+
+          # 3. Restore your actual video sourcing code back into the new template
+          rm -rf lib/*.dart
+          cp backup_lib/*.dart lib/
+
+          # 4. Inject required packages directly into the generated configuration file
+          flutter pub add flutter_inappwebview
+          flutter pub add http
+          flutter pub add video_player
+
+          # 5. Inject hardware performance tags for low-end devices into the manifest
           sed -i '/<application/a \        android:hardwareAccelerated="true"\n        android:largeHeap="true"' android/app/src/main/AndroidManifest.xml
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" \/>' android/app/src/main/AndroidManifest.xml
 
