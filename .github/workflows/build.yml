@@ -47,34 +47,37 @@ jobs:
       - name: Generate and Configure Native Android Files
         working-directory: ${{ steps.locate.outputs.project_dir }}
         run: |
-          # 1. Regenerate android scaffolding if missing
           if [ ! -d "android" ]; then
             echo "Generating android directory..."
             flutter create . --platforms=android --org com.example
           fi
 
-          # 2. Inject Internet & Network permissions into AndroidManifest.xml
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' "$MANIFEST"
             sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
           fi
 
-          # 3. Ensure minSdkVersion is at least 21 in build.gradle
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' "$APP_GRADLE"
             sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' "$APP_GRADLE"
           fi
 
-      - name: Install Project Dependencies
+      - name: Install Dependencies
         working-directory: ${{ steps.locate.outputs.project_dir }}
         run: flutter pub get
 
-      - name: Patch InAppWebView ProGuard & Gradle Rules
+      - name: Patch ProGuard and Auto-Fix Dart Shorthands
         run: |
-          # Patch deprecated ProGuard reference inside all downloaded plugin packages
+          # 1. Fix ProGuard in pub cache
           find /home/runner/.pub-cache -name "build.gradle" -exec sed -i "s/proguard-android.txt/proguard-android-optimize.txt/g" {} +
+
+          # 2. Automatically fix the dot-shorthands across all .dart files
+          echo "Auto-fixing dot-shorthands in Dart source files..."
+          find . -name "*.dart" -exec sed -i 's/colorScheme: \.fromSeed/colorScheme: ColorScheme.fromSeed/g' {} +
+          find . -name "*.dart" -exec sed -i 's/mainAxisAlignment: \.center/mainAxisAlignment: MainAxisAlignment.center/g' {} +
+          find . -name "*.dart" -exec sed -i 's/crossAxisAlignment: \.center/crossAxisAlignment: CrossAxisAlignment.center/g' {} +
 
       - name: Build Android Release APK
         working-directory: ${{ steps.locate.outputs.project_dir }}
