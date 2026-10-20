@@ -83,9 +83,13 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
         onTap: (i) => setState(() => _tab = i),
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.movie_creation_outlined), label: 'Discover'),
+            icon: Icon(Icons.movie_creation_outlined),
+            label: 'Discover',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_border), label: 'Watchlist'),
+            icon: Icon(Icons.bookmark_border),
+            label: 'Watchlist',
+          ),
         ],
       ),
     );
@@ -93,7 +97,7 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
 }
 
 // ============================================================================
-// DISCOVER TAB (TMDb METADATA SEARCH)
+// DISCOVER TAB (LIVE TMDB DATA ONLY)
 // ============================================================================
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
@@ -108,77 +112,38 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _isLoading = false;
   Timer? _debounce;
 
-  final String _tmdbApiKey = "YOUR_TMDB_API_KEY_HERE";
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInitialDemos();
-  }
-
-  void _loadInitialDemos() {
-    _movies = [
-      MovieMetadata(
-        id: 872585,
-        title: 'Oppenheimer',
-        releaseYear: '2023',
-        rating: 8.9,
-        posterUrl:
-            'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
-        description: 'The story of J. Robert Oppenheimer.',
-        mediaType: 'movie',
-      ),
-      MovieMetadata(
-        id: 37854,
-        title: 'One Piece',
-        releaseYear: '1999',
-        rating: 8.9,
-        posterUrl:
-            'https://image.tmdb.org/t/p/w500/fcXdJUSDiDiFupuDuKFfuP2JEz5.jpg',
-        description: 'Monkey D. Luffy sets out to sea.',
-        mediaType: 'tv',
-      ),
-      MovieMetadata(
-        id: 94605,
-        title: 'Arcane',
-        releaseYear: '2021',
-        rating: 9.0,
-        posterUrl:
-            'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn397FvFeNz9H.jpg',
-        description: 'Two sisters fight on rival sides.',
-        mediaType: 'tv',
-      ),
-    ];
-  }
+  // Real TMDb API key configured
+  final String _tmdbApiKey = "8b14746045cf2ecf234924551fef6867";
 
   Future<void> _searchTitles(String query) async {
     final clean = query.trim();
     if (clean.isEmpty) {
-      setState(() => _loadInitialDemos());
+      if (mounted) setState(() => _movies = []);
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      if (_tmdbApiKey != "YOUR_TMDB_API_KEY_HERE") {
-        final uri = Uri.parse(
-            'https://api.themoviedb.org/3/search/multi?api_key=$_tmdbApiKey&query=${Uri.encodeComponent(clean)}&include_adult=false');
-        final res = await http.get(uri).timeout(const Duration(seconds: 8));
-        if (res.statusCode == 200) {
-          final data = json.decode(res.body);
-          final List results = data['results'] ?? [];
-          final List<MovieMetadata> items = [];
+      final uri = Uri.parse(
+        'https://api.themoviedb.org/3/search/multi?api_key=$_tmdbApiKey&query=${Uri.encodeComponent(clean)}&include_adult=false',
+      );
+      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        final List results = data['results'] ?? [];
+        final List<MovieMetadata> items = [];
 
-          for (final doc in results) {
-            final type = doc['media_type'] ?? 'movie';
-            if (type != 'movie' && type != 'tv') continue;
+        for (final doc in results) {
+          final type = doc['media_type'] ?? 'movie';
+          if (type != 'movie' && type != 'tv') continue;
 
-            final title = doc['title'] ?? doc['name'] ?? 'Untitled';
-            final date = doc['release_date'] ?? doc['first_air_date'] ?? '';
-            final posterPath = doc['poster_path'];
+          final title = doc['title'] ?? doc['name'] ?? 'Untitled';
+          final date = doc['release_date'] ?? doc['first_air_date'] ?? '';
+          final posterPath = doc['poster_path'];
 
-            items.add(MovieMetadata(
+          items.add(
+            MovieMetadata(
               id: doc['id'],
               title: title,
               releaseYear: date.length >= 4 ? date.substring(0, 4) : 'N/A',
@@ -188,43 +153,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   : 'https://via.placeholder.com/400x600/16181F/FFFFFF?text=No+Poster',
               description: doc['overview'] ?? 'No overview available.',
               mediaType: type,
-            ));
-          }
-          if (mounted) setState(() => _movies = items);
+            ),
+          );
         }
-      } else {
-        await Future.delayed(const Duration(milliseconds: 300));
-        setState(() {
-          _movies = [
-            MovieMetadata(
-              id: 872585,
-              title: 'Oppenheimer',
-              releaseYear: '2023',
-              rating: 8.9,
-              posterUrl:
-                  'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
-              description: 'The story of J. Robert Oppenheimer.',
-              mediaType: 'movie',
-            ),
-            MovieMetadata(
-              id: 37854,
-              title: 'One Piece',
-              releaseYear: '1999',
-              rating: 8.9,
-              posterUrl:
-                  'https://image.tmdb.org/t/p/w500/fcXdJUSDiDiFupuDuKFfuP2JEz5.jpg',
-              description: 'Monkey D. Luffy sets out to sea.',
-              mediaType: 'tv',
-            ),
-          ]
-              .where((m) =>
-                  m.title.toLowerCase().contains(clean.toLowerCase()))
-              .toList();
-        });
+        if (mounted) setState(() => _movies = items);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Live TMDb search error: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-    if (mounted) setState(() => _isLoading = false);
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -232,8 +177,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF16181F),
-        title: const Text('Cinematic Library',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          'Cinematic Library',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
       ),
       body: Column(
         children: [
@@ -243,116 +190,147 @@ class _CatalogScreenState extends State<CatalogScreen> {
               controller: _searchCtrl,
               onChanged: (val) {
                 _debounce?.cancel();
-                _debounce = Timer(const Duration(milliseconds: 500),
-                    () => _searchTitles(val));
+                _debounce = Timer(
+                  const Duration(milliseconds: 500),
+                  () => _searchTitles(val),
+                );
               },
               decoration: InputDecoration(
-                hintText: 'Search Oppenheimer, Anime, Shows...',
+                hintText: 'Search movies, anime, series...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFE50914)),
                 filled: true,
                 fillColor: const Color(0xFF16181F),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none),
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),
           if (_isLoading)
             const LinearProgressIndicator(
-                color: Color(0xFFE50914), minHeight: 2),
+              color: Color(0xFFE50914),
+              minHeight: 2,
+            ),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.62,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: _movies.length,
-              itemBuilder: (ctx, i) {
-                final movie = _movies[i];
-                return GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SourcingPlayerScreen(
-                        tmdbId: movie.id,
-                        title: movie.title,
-                        mediaType: movie.mediaType,
-                        tmdbApiKey: _tmdbApiKey,
-                      ),
+            child: _movies.isEmpty && !_isLoading
+                ? const Center(
+                    child: Text(
+                      'Search above to fetch live titles from TMDb.',
+                      style: TextStyle(color: Colors.white54),
                     ),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF16181F),
-                        borderRadius: BorderRadius.circular(10)),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Stack(
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.62,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _movies.length,
+                    itemBuilder: (ctx, i) {
+                      final movie = _movies[i];
+                      return GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SourcingPlayerScreen(
+                              tmdbId: movie.id,
+                              title: movie.title,
+                              mediaType: movie.mediaType,
+                              tmdbApiKey: _tmdbApiKey,
+                            ),
+                          ),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16181F),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Image.network(movie.posterUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity),
-                              Positioned(
-                                top: 6,
-                                right: 6,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.8),
-                                      borderRadius: BorderRadius.circular(4)),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.star,
-                                          color: Colors.amber, size: 12),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                          movie.rating > 0
-                                              ? movie.rating.toStringAsFixed(1)
-                                              : 'NR',
-                                          style: const TextStyle(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                              Expanded(
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      movie.posterUrl,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                    Positioned(
+                                      top: 6,
+                                      right: 6,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.8),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.star,
+                                              color: Colors.amber,
+                                              size: 12,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              movie.rating > 0
+                                                  ? movie.rating
+                                                      .toStringAsFixed(1)
+                                                  : 'NR',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      movie.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '${movie.releaseYear} • ${movie.mediaType.toUpperCase()}',
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(movie.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13)),
-                              const SizedBox(height: 3),
-                              Text(
-                                  '${movie.releaseYear} • ${movie.mediaType.toUpperCase()}',
-                                  style: const TextStyle(
-                                      color: Colors.white54, fontSize: 11)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -371,26 +349,40 @@ class WatchlistScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF16181F),
-        title: const Text('My Watchlist',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'My Watchlist',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: ValueListenableBuilder<List<MovieMetadata>>(
         valueListenable: globalWatchlist,
         builder: (context, list, _) {
           if (list.isEmpty) {
             return const Center(
-                child: Text('Your watchlist is empty.',
-                    style: TextStyle(color: Colors.white54)));
+              child: Text(
+                'Your watchlist is empty.',
+                style: TextStyle(color: Colors.white54),
+              ),
+            );
           }
           return ListView.builder(
             itemCount: list.length,
             itemBuilder: (ctx, i) {
               final item = list[i];
               return ListTile(
-                leading: Image.network(item.posterUrl, width: 40, fit: BoxFit.cover),
+                leading: Image.network(
+                  item.posterUrl,
+                  width: 40,
+                  fit: BoxFit.cover,
+                ),
                 title: Text(item.title),
-                subtitle: Text('${item.releaseYear} • Rating: ★ ${item.rating}'),
-                trailing: const Icon(Icons.play_arrow, color: Color(0xFFE50914)),
+                subtitle: Text(
+                  '${item.releaseYear} • Rating: ★ ${item.rating}',
+                ),
+                trailing: const Icon(
+                  Icons.play_arrow,
+                  color: Color(0xFFE50914),
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -398,7 +390,7 @@ class WatchlistScreen extends StatelessWidget {
                       tmdbId: item.id,
                       title: item.title,
                       mediaType: item.mediaType,
-                      tmdbApiKey: "YOUR_TMDB_API_KEY_HERE",
+                      tmdbApiKey: "8b14746045cf2ecf234924551fef6867",
                     ),
                   ),
                 ),
