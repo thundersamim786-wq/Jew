@@ -50,9 +50,9 @@ class UltimateStreamApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0D0E12),
         primaryColor: const Color(0xFFE50914),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFE50914),
-          surface: Color(0xFF16181F),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFE50914),
+          brightness: Brightness.dark,
         ),
       ),
       home: const MainTabNavigator(),
@@ -112,7 +112,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _isLoading = false;
   Timer? _debounce;
 
-  // Real TMDb API key configured
   final String _tmdbApiKey = "8b14746045cf2ecf234924551fef6867";
 
   Future<void> _searchTitles(String query) async {
