@@ -482,23 +482,43 @@ class _UltimatePlayerScreenState extends State<UltimatePlayerScreen> {
                       title: const Text('Audio Language'),
                       trailing: Text(_selectedLang, style: const TextStyle(color: Color(0xFFE50914))),
                       onTap: () {
-                        setState(() => _selectedLang = _selectedLang == 'English' ? 'Hindi' : 'English');
-                        setModalState((){});
-                      },
-                    ),
-                  ],
-                ),
+                      // Opens the player screen and passes the required metadata parameters
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SourcingPlayerScreen(
+                            tmdbId: movie.id,
+                            title: movie.title,
+                            mediaType: movie.mediaType,
+                            tmdbApiKey: _tmdbApiKey,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
-            );
-          }
-        );
-      },
-    ).then((_) => _startHideControlsTimer());
+            )
+        ],
+      ),
+    );
   }
+}
+
+// ============================================================================
+// WATCHLIST TAB
+// ============================================================================
+class WatchlistScreen extends StatelessWidget {
+  const WatchlistScreen({super.key});
 
   @override
-  void dispose() {
-    _hideControlsTimer?.cancel();
-    _controller?.dispose();
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My Watchlist')),
+      body: const Center(
+        child: Text('Your watchlist is empty.', style: TextStyle(color: Colors.white54)),
+      ),
+    );
+  }
+}
+              
