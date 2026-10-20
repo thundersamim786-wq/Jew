@@ -11,9 +11,6 @@ void main() {
   runApp(const UltimateStreamApp());
 }
 
-// ============================================================================
-// DATA MODEL & GLOBAL WATCHLIST
-// ============================================================================
 class MovieMetadata {
   final int id;
   final String title;
@@ -36,9 +33,6 @@ class MovieMetadata {
 
 final ValueNotifier<List<MovieMetadata>> globalWatchlist = ValueNotifier([]);
 
-// ============================================================================
-// MAIN APP NAVIGATION
-// ============================================================================
 class UltimateStreamApp extends StatelessWidget {
   const UltimateStreamApp({super.key});
 
@@ -50,9 +44,9 @@ class UltimateStreamApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF0D0E12),
         primaryColor: const Color(0xFFE50914),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple),
-          brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFE50914),
+          surface: Color(0xFF16181F),
         ),
       ),
       home: const MainTabNavigator(),
@@ -96,9 +90,6 @@ class _MainTabNavigatorState extends State<MainTabNavigator> {
   }
 }
 
-// ============================================================================
-// DISCOVER TAB (LIVE TMDB DATA ONLY)
-// ============================================================================
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
 
@@ -337,9 +328,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 }
 
-// ============================================================================
-// WATCHLIST SCREEN
-// ============================================================================
 class WatchlistScreen extends StatelessWidget {
   const WatchlistScreen({super.key});
 
