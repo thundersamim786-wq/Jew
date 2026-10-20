@@ -45,7 +45,24 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Project Dependencies
+      - name: Auto-generate Android Folder & Permissions
+        working-directory: ${{ steps.locate.outputs.project_dir }}
+        run: |
+          # 1. Regenerate native Android structure if missing
+          if [ ! -d "android" ]; then
+            echo "Android folder missing. Generating native Android scaffolding..."
+            flutter create . --platforms=android --org com.example
+          fi
+
+          # 2. Add required network permissions to AndroidManifest.xml
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            echo "Injecting Internet permissions and cleartext traffic support..."
+            sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' "$MANIFEST"
+            sed -i 's/<application/<application android:usesCleartextTraffic="true"/' "$MANIFEST"
+          fi
+
+      - name: Install Dependencies
         working-directory: ${{ steps.locate.outputs.project_dir }}
         run: flutter pub get
 
