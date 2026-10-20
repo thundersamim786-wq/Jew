@@ -51,7 +51,7 @@ class UltimateStreamApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF0D0E12),
         primaryColor: const Color(0xFFE50914),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE50914),
+          seedColor: Colors.deepPurple),
           brightness: Brightness.dark,
         ),
       ),
