@@ -1,34 +1,56 @@
-name: cinematic_vod
-description: "A streaming and media playback mobile application built with Flutter."
-publish_to: "none" # Remove this line if you wish to publish to pub.dev
+name: Build Android APK
 
-version: 1.0.0+1
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
-environment:
-  sdk: ">=3.0.0 <4.0.0"
+jobs:
+  build:
+    name: Compile Release APK
+    runs-on: ubuntu-latest
 
-dependencies:
-  flutter:
-    sdk: flutter
+    # REPLACE 'YOUR_SUBFOLDER_NAME' with the actual folder name holding pubspec.yaml
+    defaults:
+      run:
+        working-directory: YOUR_SUBFOLDER_NAME
 
-  # Networking & JSON parsing
-  http: ^1.2.0
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  # Video playback engine
-  video_player: ^2.8.2
+      - name: Setup Java Development Kit (JDK 17)
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-  # Headless browser scraping engine
-  flutter_inappwebview: ^6.0.0
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
 
-  # Standard UI icons
-  cupertino_icons: ^1.0.6
+      - name: Verify Flutter Installation
+        run: flutter doctor -v
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
+      - name: Install Project Dependencies
+        run: flutter pub get
 
-  flutter_lints: ^3.0.0
+      - name: Build Android Release APK
+        run: flutter build apk --release
 
-flutter:
-  uses-material-design: true
-  
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-app-release
+          path: YOUR_SUBFOLDER_NAME/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 7
+          
