@@ -11,16 +11,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Networking & live TMDb API calls
+  # Networking & TMDb API
   http: ^1.2.0
 
-  # Native video playback engine
+  # Video playback
   video_player: ^2.8.2
 
-  # In-app scraping & stream extraction engine
+  # In-app scraping & stream extraction
   flutter_inappwebview: ^6.0.0
 
-  # Standard UI icons
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
@@ -29,21 +28,6 @@ dev_dependencies:
 
   flutter_lints: ^3.0.0
 
-  # App icon generator
-  flutter_launcher_icons: ^0.13.1
-
-# Launcher Icon Configuration
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#0D0E12"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
-
 flutter:
   uses-material-design: true
-
-  # Ensure icon asset directory is bundled
-  assets:
-    - assets/icon/
-    
+  
