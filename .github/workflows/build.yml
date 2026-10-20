@@ -24,24 +24,32 @@ jobs:
 
       - name: Restructure Project and Compile
         run: |
-          # 1. Back up your existing Dart source files to a temporary folder
+          # 1. Back up all your source files to a safe temporary folder
           mkdir backup_lib
           cp lib/*.dart backup_lib/
 
-          # 2. Re-initialize a perfect, fully valid Flutter template structure
+          # 2. Re-initialize a perfectly clean Flutter app structure
           rm -rf lib
           flutter create . --project-name=ultimate_vod --overwrite
 
-          # 3. Restore your actual video sourcing code back into the new template
-          rm -rf lib/*.dart
+          # 3. Clear template defaults and restore your code files
+          rm -f lib/*.dart
           cp backup_lib/*.dart lib/
 
-          # 4. Inject required packages directly into the generated configuration file
+          # 4. Check if main.dart exists. If not, find the primary file and fix its name
+          if [ ! -f lib/main.dart ]; then
+            PRIMARY_FILE=$(grep -l "void main()" lib/*.dart | head -n 1)
+            if [ -n "$PRIMARY_FILE" ]; then
+              mv "$PRIMARY_FILE" lib/main.dart
+            fi
+          fi
+
+          # 5. Inject required streaming packages directly into the config file
           flutter pub add flutter_inappwebview
           flutter pub add http
           flutter pub add video_player
 
-          # 5. Inject hardware performance tags for low-end devices into the manifest
+          # 6. Inject low-end hardware performance tags into the application manifest
           sed -i '/<application/a \        android:hardwareAccelerated="true"\n        android:largeHeap="true"' android/app/src/main/AndroidManifest.xml
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" \/>' android/app/src/main/AndroidManifest.xml
 
