@@ -56,7 +56,7 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
   }
 
   Future<void> _fetchTvShowMetadata() async {
-    if (widget.tmdbApiKey == "YOUR_TMDB_API_KEY_HERE") return;
+    if (widget.tmdbApiKey.isEmpty || widget.tmdbApiKey == "YOUR_TMDB_API_KEY_HERE") return;
     setState(() => _isLoadingTvMetadata = true);
     try {
       final tvUri = Uri.parse(
@@ -204,7 +204,9 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
       Uri.parse(targetStreamUrl),
       httpHeaders: _customHeaders,
       videoPlayerOptions: VideoPlayerOptions(
-          allowBackgroundPlayback: false, mixWithOthers: false),
+        allowBackgroundPlayback: false,
+        mixWithOthers: false,
+      ),
     )..initialize().then((_) {
         if (!mounted) return;
         setState(() {});
@@ -220,8 +222,10 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
   }
 
   void _lockOrientationToLandscape() {
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
 
   void _revertOrientationToPortrait() {
@@ -255,7 +259,8 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
     } else {
       _revertOrientationToPortrait();
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Collection finished.")));
+        const SnackBar(content: Text("Collection finished.")),
+      );
     }
   }
 
@@ -268,7 +273,8 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
   void _showQualityPickerSheet() {
     if (_availableQualities.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Multi-quality feeds unavailable.")));
+        const SnackBar(content: Text("Multi-quality feeds unavailable.")),
+      );
       return;
     }
     showModalBottomSheet(
@@ -279,10 +285,12 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
           shrinkWrap: true,
           children: _availableQualities.keys
               .map((label) => ListTile(
-                    leading: Icon(Icons.check,
-                        color: _currentQualityLabel == label
-                            ? Colors.red
-                            : Colors.transparent),
+                    leading: Icon(
+                      Icons.check,
+                      color: _currentQualityLabel == label
+                          ? Colors.red
+                          : Colors.transparent,
+                    ),
                     title: Text(label,
                         style: const TextStyle(color: Colors.white)),
                     onTap: () {
@@ -316,7 +324,8 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
           ? null
           : AppBar(
               title: Text(widget.title),
-              backgroundColor: const Color(0xFF16181F)),
+              backgroundColor: const Color(0xFF16181F),
+            ),
       body: Column(
         children: [
           Expanded(
@@ -326,14 +335,16 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                          const CircularProgressIndicator(color: Colors.red),
-                          const SizedBox(height: 16),
-                          Text(
-                              widget.mediaType == 'tv'
-                                  ? "Resolving S$_selectedSeason E$_selectedEpisode..."
-                                  : "Searching stream source...",
-                              style: const TextStyle(color: Colors.white70))
-                        ])
+                        const CircularProgressIndicator(color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.mediaType == 'tv'
+                              ? "Resolving S$_selectedSeason E$_selectedEpisode..."
+                              : "Resolving source...",
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    )
                   : (_videoController != null &&
                           _videoController!.value.isInitialized)
                       ? GestureDetector(
@@ -343,9 +354,10 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                             alignment: Alignment.center,
                             children: [
                               AspectRatio(
-                                  aspectRatio:
-                                      _videoController!.value.aspectRatio,
-                                  child: VideoPlayer(_videoController!)),
+                                aspectRatio:
+                                    _videoController!.value.aspectRatio,
+                                child: VideoPlayer(_videoController!),
+                              ),
                               AnimatedOpacity(
                                 opacity: _showControls ? 1.0 : 0.0,
                                 duration: const Duration(milliseconds: 250),
@@ -365,25 +377,28 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               IconButton(
-                                                  icon: const Icon(
-                                                      Icons.arrow_back,
-                                                      color: Colors.white),
-                                                  onPressed: () =>
-                                                      Navigator.pop(context)),
+                                                icon: const Icon(
+                                                    Icons.arrow_back,
+                                                    color: Colors.white),
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                              ),
                                               TextButton.icon(
-                                                  icon: const Icon(
-                                                      Icons.settings,
-                                                      color: Colors.white,
-                                                      size: 18),
-                                                  label: Text(
-                                                      _currentQualityLabel,
-                                                      style: const TextStyle(
-                                                          color: Colors.white)),
-                                                  style: TextButton.styleFrom(
-                                                      backgroundColor:
-                                                          Colors.white12),
-                                                  onPressed:
-                                                      _showQualityPickerSheet)
+                                                icon: const Icon(
+                                                    Icons.settings,
+                                                    color: Colors.white,
+                                                    size: 18),
+                                                label: Text(
+                                                  _currentQualityLabel,
+                                                  style: const TextStyle(
+                                                      color: Colors.white),
+                                                ),
+                                                style: TextButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.white12),
+                                                onPressed:
+                                                    _showQualityPickerSheet,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -392,41 +407,46 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                                               MainAxisAlignment.center,
                                           children: [
                                             IconButton(
-                                                icon: const Icon(Icons.replay_10,
-                                                    size: 40,
-                                                    color: Colors.white),
-                                                onPressed: () =>
-                                                    _seekRelative(-10)),
+                                              icon: const Icon(Icons.replay_10,
+                                                  size: 40,
+                                                  color: Colors.white),
+                                              onPressed: () =>
+                                                  _seekRelative(-10),
+                                            ),
                                             const SizedBox(width: 32),
                                             CircleAvatar(
-                                                radius: 28,
-                                                backgroundColor: Colors.red,
-                                                child: IconButton(
-                                                    icon: Icon(
-                                                        _videoController!
-                                                                .value.isPlaying
-                                                            ? Icons.pause
-                                                            : Icons.play_arrow,
-                                                        size: 32,
-                                                        color: Colors.white),
-                                                    onPressed: () {
-                                                      setState(() {
-                                                        _videoController!
-                                                                .value.isPlaying
-                                                            ? _videoController!
-                                                                .pause()
-                                                            : _videoController!
-                                                                .play();
-                                                      });
-                                                    })),
+                                              radius: 28,
+                                              backgroundColor: Colors.red,
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  _videoController!
+                                                          .value.isPlaying
+                                                      ? Icons.pause
+                                                      : Icons.play_arrow,
+                                                  size: 32,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _videoController!
+                                                            .value.isPlaying
+                                                        ? _videoController!
+                                                            .pause()
+                                                        : _videoController!
+                                                            .play();
+                                                  });
+                                                },
+                                              ),
+                                            ),
                                             const SizedBox(width: 32),
                                             IconButton(
-                                                icon: const Icon(
-                                                    Icons.forward_10,
-                                                    size: 40,
-                                                    color: Colors.white),
-                                                onPressed: () =>
-                                                    _seekRelative(10)),
+                                              icon: const Icon(
+                                                  Icons.forward_10,
+                                                  size: 40,
+                                                  color: Colors.white),
+                                              onPressed: () =>
+                                                  _seekRelative(10),
+                                            ),
                                           ],
                                         ),
                                         Padding(
@@ -435,17 +455,18 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                                             _videoController!,
                                             allowScrubbing: true,
                                             colors: const VideoProgressColors(
-                                                playedColor: Colors.red,
-                                                bufferedColor: Colors.white30,
-                                                backgroundColor:
-                                                    Colors.white12),
+                                              playedColor: Colors.red,
+                                              bufferedColor: Colors.white30,
+                                              backgroundColor:
+                                                  Colors.white12,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         )
@@ -466,21 +487,13 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.between,
                             children: [
-                              const Text("Select Episode Source",
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white)),
+                              const Text(
+                                "Select Episode Source",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
                               Text(
-                                  "Playing: S$_selectedSeason E$_selectedEpisode",
-                                  style: const TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.w600))
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<int>(
-                      
+                                "Playing: S$_selectedSeason E$_selectedEpisode",
+          
