@@ -497,3 +497,74 @@ class _SourcingPlayerScreenState extends State<SourcingPlayerScreen> {
                               Text(
                                 "Playing: S$_selectedSeason E$_selectedEpisode",
           
+                                style: const TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  value: _selectedSeason,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Season',
+                                    border: OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Color(0xFF16181F),
+                                  ),
+                                  items: List.generate(
+                                          _totalSeasons, (i) => i + 1)
+                                      .map((s) => DropdownMenuItem(
+                                          value: s, child: Text('Season $s')))
+                                      .toList(),
+                                  onChanged: (val) async {
+                                    if (val != null && val != _selectedSeason) {
+                                      _selectedSeason = val;
+                                      setState(
+                                          () => _isLoadingTvMetadata = true);
+                                      await _fetchEpisodesForSeason(
+                                          _selectedSeason);
+                                      setState(
+                                          () => _isLoadingTvMetadata = false);
+                                      _updateEmbedUrlAndBootScraper();
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  value: _selectedEpisode,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Episode',
+                                    border: OutlineInputBorder(),
+                                    filled: true,
+                                    fillColor: Color(0xFF16181F),
+                                  ),
+                                  items: _episodesInSeason
+                                      .map((e) => DropdownMenuItem(
+                                          value: e, child: Text('Episode $e')))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null &&
+                                        val != _selectedEpisode) {
+                                      setState(() => _selectedEpisode = val);
+                                      _updateEmbedUrlAndBootScraper();
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
